@@ -1,20 +1,34 @@
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.function.Consumer;
 
 class AnalysisEngine {
-    List<Activity> activities;
-    List<Stat> stats;
+    List<MyEvent> events;
 
     public AnalysisEngine(String baseDataFilename) {
-        System.out.printf("Reading events from '%s'...%n", baseDataFilename);
-        activities = new ArrayList<Activity>();
-        Activities.readFile(baseDataFilename, activity -> activities.add(activity));
-        
+        System.out.println("\nANALYSIS ENGINE");
+        events = new ArrayList<MyEvent>();
+        MyEvents.readFile(baseDataFilename, event -> events.add(event));
+    }
+
+    public void generateStatistics(Consumer<MyStat> callback) {
         System.out.println("Calculating each events' statistics...");
-        // todo
+        for (MyEvent event : events) {
+            double sum = Arrays.stream(event.values).sum();
+            double average = sum / event.values.length;
+            double variance = Arrays.stream(event.values)
+                .map(val -> Math.pow(val - average, 2))
+                .sum() / event.values.length;
+            double sd = Math.sqrt(variance);
+
+            MyStat stat = new MyStat() {{
+                name = event.name;
+                total = sum;
+                mean = average;
+                standardDeviation = sd;
+            }};
+            callback.accept(stat);
+        }
     }
 }
-
-// TODO: Analysis Engine: Measure the events data and determine the statistics associated with the baseline.
-// - Produce totals for each event for each day; store it in a file.
-// - Determine the mean and standard deviation associated with that event across that data.

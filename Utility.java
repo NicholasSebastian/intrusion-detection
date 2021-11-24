@@ -46,4 +46,19 @@ class Utility {
         }
         return null;
     }
+
+    public static void reportAlerts(List<Alert> alerts) {
+        String header = (" ").repeat(10) + String.format("%10s%10s", "Anomaly", "Alarm");
+        System.out.println(header);
+
+        String horizontalLine = ("-").repeat(header.length());
+        System.out.println(horizontalLine);
+
+        for (int i = 0; i < alerts.size(); i++) {
+            Alert alert = alerts.get(i);
+            String day = "Day " + (i + 1);
+            String alarm = alert.alarm ? "Yes" : "No";
+            System.out.printf("%10s%10.2f%10s%n", day, alert.anomaly, alarm);
+        }
+    }
 }
