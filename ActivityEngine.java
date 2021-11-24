@@ -1,17 +1,17 @@
+import java.util.List;
 import java.util.ArrayList;
 import java.util.Random;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 
 class ActivityEngine {
-    Events events;
-    Stats stats;
-    double[][] activities;
+    List<Event> events;
+    List<Stat> stats;
+    List<Activity> activities;
     int days;
 
-    public ActivityEngine(String[] args) {
+    public ActivityEngine(String[] args, String baseDataFilename) {
+        events = new ArrayList<Event>();
+        stats = new ArrayList<Stat>();
+
         System.out.println("Reading input files...");
         loadEventStats(args);
 
@@ -19,9 +19,8 @@ class ActivityEngine {
         loadActivities();
         System.out.println("Events generated successfully!");
 
-        String filename = "events-log.txt";
-        System.out.printf("Writing events to '%s'...%n", filename);
-        logEventsToFile(filename);
+        System.out.printf("Writing events to '%s'...%n", baseDataFilename);
+        Activities.writeToFile(baseDataFilename, activities);
         System.out.println("Events written successfully!");
     }
 
@@ -30,8 +29,8 @@ class ActivityEngine {
             if (args.length != 3) {
                 throw new IllegalArgumentException();
             }
-            events = new Events(args[0]);
-            stats = new Stats(args[1]);
+            Events.readFile(args[0], event -> events.add(event));
+            Stats.readFile(args[1], stat -> stats.add(stat));
             days = Integer.parseInt(args[2]);
         }
         catch (Exception error) {
@@ -42,49 +41,15 @@ class ActivityEngine {
 
     private void loadActivities() {
         Random random = new Random();
-        activities = new double[days][];
-        for (int i = 0; i < days; i++) {
-            double[] day = new double[stats.items.size()];
-            for (int j = 0; j < stats.items.size(); j++) {
-                Stat stat = stats.items.get(j);
+        activities = new ArrayList<Activity>();
+        for (Stat stat : stats) {
+            double[] vals = new double[days];
+            for (int i = 0; i < days; i++) {
                 double value = random.nextGaussian() * stat.standardDeviation + stat.mean;
-                day[j] = value;
+                vals[i] = value;
             }
-            activities[i] = day;
-        }
-    }
-
-    private void logEventsToFile(String filename) {
-        ArrayList<String> lines = new ArrayList<String>();
-
-        String header = (" ").repeat(20);
-        for (int i = 1; i <= days; i++) {
-            header += String.format("%10s", "Day " + i);
-        }
-
-        String horizontalLine = ("-").repeat(header.length());
-        lines.add(header);
-        lines.add(horizontalLine);
-        
-        for (int i = 0; i < events.items.size(); i++) {
-            Event event = events.items.get(i);
-            String format = event.type == EventType.Continuous ? "%10.2f" : "%10.0f";
-
-            String line = String.format("%20s", event.name);
-            for (int j = 0; j < days; j++) {
-                double[] day = activities[j];
-                double value = day[i];
-                line += String.format(format, value);
-            }
-            lines.add(line);
-        }
-        try {
-            Path path = Paths.get(filename);
-            Files.write(path, lines);
-        }
-        catch (IOException exception) {
-            System.out.println("Something went wrong when attempting to write events to file.");
-            System.exit(1);
+            Activity activity = new Activity() {{ name = stat.name; values = vals; }};
+            activities.add(activity);
         }
     }
 }

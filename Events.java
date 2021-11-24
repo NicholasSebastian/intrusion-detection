@@ -1,3 +1,5 @@
+import java.util.List;
+import java.util.function.Consumer;
 import java.util.regex.Matcher;
 
 class Event {
@@ -8,18 +10,21 @@ class Event {
     int weight;
 }
 
-class Events extends Models<Event> {
-    public Events(String filename) {
-        super(filename);
+class Events {
+    private static String pattern = "(.*):([CD]):(\\d*):(\\d*):(\\d*):";
+
+    public static void readFile(String filename, Consumer<Event> callback) {
+        List<String> lines = Utility.readFile(filename);
+        int number = Integer.parseInt(lines.get(0));
+        for (int i = 1; i <= number; i++) {
+            String line = lines.get(i);
+            Matcher match = Utility.parseRegex(line, pattern);
+            Event event = createEvent(match);
+            callback.accept(event);
+        }
     }
 
-    @Override
-    protected String getPattern() {
-        return "(.*):([CD]):(\\d*):(\\d*):(\\d*):";
-    }
-
-    @Override
-    protected Event createItem(Matcher match) {
+    private static Event createEvent(Matcher match) {
         return new Event() {{
             name = match.group(1);
             type = parseType(match.group(2));

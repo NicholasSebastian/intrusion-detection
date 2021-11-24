@@ -1,3 +1,5 @@
+import java.util.List;
+import java.util.function.Consumer;
 import java.util.regex.Matcher;
 
 class Stat {
@@ -6,18 +8,21 @@ class Stat {
     double standardDeviation;
 }
 
-class Stats extends Models<Stat> {
-    public Stats(String filename) {
-        super(filename);
+class Stats {
+    private static String pattern = "(.*):(\\d*\\.?\\d*):(\\d*\\.?\\d*):";
+
+    public static void readFile(String filename, Consumer<Stat> callback) {
+        List<String> lines = Utility.readFile(filename);
+        int number = Integer.parseInt(lines.get(0));
+        for (int i = 1; i <= number; i++) {
+            String line = lines.get(i);
+            Matcher match = Utility.parseRegex(line, pattern);
+            Stat event = createStat(match);
+            callback.accept(event);
+        }
     }
 
-    @Override
-    protected String getPattern() {
-        return "(.*):(\\d*\\.?\\d*):(\\d*\\.?\\d*):";
-    }
-
-    @Override
-    protected Stat createItem(Matcher match) {
+    private static Stat createStat(Matcher match) {
         return new Stat() {{
             name = match.group(1);
             mean = parseDouble(match.group(2));

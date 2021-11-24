@@ -1,46 +1,42 @@
 import java.util.List;
-import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-abstract class Models<T> {
-    public List<T> items;
-    protected abstract String getPattern();
-    protected abstract T createItem(Matcher match);
-
-    public Models(String filename) {
-        items = new ArrayList<T>();
-        readFile(filename);
-    }
-
-    private void readFile(String filename) {
+class Utility {
+    public static List<String> readFile(String filename) {
         try {
             Path path = Paths.get(filename);
             List<String> lines = Files.readAllLines(path);
-            int number = Integer.parseInt(lines.get(0));
-
-            for (int i = 0; i < number; i++) {
-                String line = lines.get(i + 1);
-                T item = parseLine(line);
-                items.add(item);
-            }
+            return lines;
         }
         catch (Exception exception) {
             System.out.printf("Unable to process '%s'%n", filename);
             System.exit(1);
         }
+        return null;
     }
 
-    private T parseLine(String line) {
-        String pattern = getPattern();
+    public static void writeFile(String filename, List<String> lines) {
+        try {
+            Path path = Paths.get(filename);
+            Files.write(path, lines);
+        }
+        catch (IOException exception) {
+            System.out.println("Something went wrong when attempting to write events to file.");
+            System.exit(1);
+        }
+    }
+
+    public static Matcher parseRegex(String line, String pattern) {
         Pattern regex = Pattern.compile(pattern);
         Matcher match = regex.matcher(line);
         try {
             if (match.find()) 
-                return createItem(match);
+                return match;
             else 
                 throw new IllegalArgumentException();
         }
